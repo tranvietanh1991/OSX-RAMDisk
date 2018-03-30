@@ -22,6 +22,7 @@ set -x
 
 ramfs_size_mb=$(sysctl hw.memsize | awk '{print $2;}')
 ramfs_size_mb=$((ramfs_size_mb/1024/1024/4))
+# ramfs_size_mb=1024
 
 mount_point=/Users/${USER}/ramdisk
 ramfs_size_sectors=$((ramfs_size_mb*1024*1024/512))
@@ -74,8 +75,8 @@ mk_ram_disk()
     echo "created RAM disk."
     # Hide RAM disk - we don't really need it to be annoiyng in finder.
     # comment out should you need it.
-    hide_ramdisk
-    echo "RAM disk hidden"
+    # hide_ramdisk
+    # echo "RAM disk hidden"
 }
 
 # adds rsync to be executed each 5 min for current user
@@ -95,6 +96,7 @@ open_app()
 hide_ramdisk()
 {
     /usr/bin/chflags hidden "${mount_point}"
+    echo "RAM disk hidden"
 }
 
 # Checks that we have
@@ -351,27 +353,91 @@ move_phpstorm_cache()
     fi
 }
 
+#
+# WebStorm
+#
+move_webstorm_cache()
+{
+    if [ -d "/Applications/WebStorm.app" ]; then
+        if user_response "${MSG_PROMPT_FOUND}" 'WebStorm'"${MSG_MOVE_CACHE}" ; then
+            echo "moving WebStorm cache";
+            close_app "WebStorm"
+            # make a backup of config - will need it when uninstalling
+            cp -f /Applications/WebStorm.app/Contents/bin/idea.properties /Applications/WebStorm.app/Contents/bin/idea.properties.back
+            # Idea will create those dirs
+            echo "idea.system.path=${USERRAMDISK}/WebStorm" >> /Applications/WebStorm.app/Contents/bin/idea.properties
+            echo "idea.log.path=${USERRAMDISK}/WebStorm/logs" >> /Applications/WebStorm.app/Contents/bin/idea.properties
+            echo "Moved WebStorm cache."
+        fi
+    fi
+}
+
+#
+# PyCharm
+#
+move_pycharm_cache()
+{
+    if [ -d "/Applications/PyCharm.app" ]; then
+        if user_response "${MSG_PROMPT_FOUND}" 'PyCharm'"${MSG_MOVE_CACHE}" ; then
+            echo "moving PyCharm cache";
+            close_app "PyCharm"
+            # make a backup of config - will need it when uninstalling
+            cp -f /Applications/PyCharm.app/Contents/bin/idea.properties /Applications/PyCharm.app/Contents/bin/idea.properties.back
+            # Idea will create those dirs
+            echo "idea.system.path=${USERRAMDISK}/PyCharm" >> /Applications/PyCharm.app/Contents/bin/idea.properties
+            echo "idea.log.path=${USERRAMDISK}/PyCharm/logs" >> /Applications/PyCharm.app/Contents/bin/idea.properties
+            echo "Moved PyCharm cache."
+        fi
+    fi
+}
+
+#
+# DataGrip
+#
+move_datagrip_cache()
+{
+    if [ -d "/Applications/DataGrip.app" ]; then
+        if user_response "${MSG_PROMPT_FOUND}" 'DataGrip'"${MSG_MOVE_CACHE}" ; then
+            echo "moving DataGrip cache";
+            close_app "DataGrip"
+            # make a backup of config - will need it when uninstalling
+            cp -f /Applications/DataGrip.app/Contents/bin/idea.properties /Applications/DataGrip.app/Contents/bin/idea.properties.back
+            # Idea will create those dirs
+            echo "idea.system.path=${USERRAMDISK}/DataGrip" >> /Applications/DataGrip.app/Contents/bin/idea.properties
+            echo "idea.log.path=${USERRAMDISK}/DataGrip/logs" >> /Applications/DataGrip.app/Contents/bin/idea.properties
+            echo "Moved DataGrip cache."
+        fi
+    fi
+}
+
 # -----------------------------------------------------------------------------------
 # The entry point
 # -----------------------------------------------------------------------------------
 main() {
     check_requirements
-    # and create our RAM disk
+    # And create our RAM disk
     mk_ram_disk
-    # move the caches
+    hide_ramdisk
+    move the caches
     move_chrome_cache
     move_safari_cache
+    move_itunes_cache
+
     move_idea_cache
     move_ideace_cache
-    # create intermediate folder for intellij projects output
+    create intermediate folder for intellij projects output
     create_intermediate_folder_for_intellij_projects
-    move_itunes_cache
+    echo "echo use \"${mount_point}/compileroutput\" for intelliJ project output directory."
+    
     move_android_studio_cache
     move_clion_cache
     move_appcode_cache
     move_xcode_cache
     move_phpstorm_cache
-    echo "echo use \"${mount_point}/compileroutput\" for intelliJ project output directory."
+    move_webstorm_cache
+    move_pycharm_cache
+    move_datagrip_cache
+    
     echo "All good - I have done my job. Your apps should fly."
 }
 
