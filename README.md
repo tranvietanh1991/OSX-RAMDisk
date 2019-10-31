@@ -47,21 +47,18 @@ Works on
 * MAC OS X 10.10.2 Yosemite
 * MAC OS X 10.11 EI Capitan
 * MAC OS X 10.12 Sierra
+* MAC OS X 10.13 High Sierra
 
 > Note that you have to re-run the script in order to get the ram disk back after machine restart.
 > Currently it does not place it on startup - I'm working on it.
 
 Give it a try before installing
 ===============================
-```bash
-$ curl -o startupRAMDiskandCacheMover.sh https://raw.githubusercontent.com/zafarella/OSX-RAMDisk/master/Contents/MacOS/startupRAMDiskandCacheMover.sh &&
-chmod +x startupRAMDiskandCacheMover.sh &&
-./startupRAMDiskandCacheMover.sh
 ```
-or
-```
-git clone git@github.com:zafarella/OSX-RAMDisk.git &&
-OSX-RAMDisk/Contents/MacOS/startupRAMDiskandCacheMover.sh
+git clone git@github.com:tranvietanh1991/OSX-RAMDisk.git
+cd OSX-RAMDisk
+. ./configure
+make
 ```
 Jetbrains IDE notes (IntelliJ)
 ===================
@@ -81,8 +78,10 @@ Installation
 ============
 Do not use it now - the startup script does not work yet - work in progress
 ```
-git clone git@github.com:zafarella/OSX-RAMDisk.git
+git clone git@github.com:tranvietanh1991/OSX-RAMDisk.git
 cd OSX-RAMDisk
+. ./configure
+make
 make install
 ```
 

@@ -1,3 +1,8 @@
+setup:
+	./Contents/MacOS/startupRAMDiskandCacheMover.sh
+clean:
+	rm ./osx_ramdisk.conf
+
 install:
 	[ -d /usr/local/bin ] || ( [ ! -d /usr/local/bin/ ] && mkdir -p /usr/local/bin )
 	cp ./Contents/MacOS/startupRAMDiskandCacheMover.sh /usr/local/bin/

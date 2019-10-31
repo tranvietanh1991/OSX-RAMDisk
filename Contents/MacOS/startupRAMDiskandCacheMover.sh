@@ -16,13 +16,34 @@ set -x
 # IF YOUR RAM IS BROKEN - DO NOT USE IT.
 #
 
+FILE1="./osx_ramdisk.conf"
+FILE2="$HOME/osx_ramdisk.conf"
+
+if [ -f "$FILE1" ]; then
+  FILE=$FILE1
+elif [ -f "$FILE2" ]; then
+  FILE=$FILE2
+else
+  FILE=""
+fi
+
+if [ -z $FILE ]; then
+  echo "Use default configure"
+else
+  echo "Load configure from $FILE"
+  source $FILE
+fi
+
+
 # The RAM amount you want to allocate for RAM disk. One of
 # 1024 2048 3072 4096 5120 6144 7168 8192
 # By default will use 1/4 of your RAM
-
-ramfs_size_mb=$(sysctl hw.memsize | awk '{print $2;}')
-ramfs_size_mb=$((ramfs_size_mb/1024/1024/4))
-# ramfs_size_mb=1024
+if [[ $RAMFS_SIZE_MB =~ ^[\-0-9]+$ ]] && (( A > 0)); then
+  ramfs_size_mb=$RAMFS_SIZE_MB
+else
+  ramfs_size_mb=$(sysctl hw.memsize | awk '{print $2;}')
+  ramfs_size_mb=$((ramfs_size_mb/1024/1024/4))
+fi
 
 mount_point=/Users/${USER}/ramdisk
 ramfs_size_sectors=$((ramfs_size_mb*1024*1024/512))

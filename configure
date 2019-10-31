@@ -1,0 +1,3 @@
+echo "The RAM amount you want to allocate for RAM disk. Should be one of 1024 2048 3072 4096 5120 6144 7168 8192. Default 0 will use 1/4 of your RAM:"
+read ramfs_size_mb
+echo "RAMFS_SIZE_MB=$ramfs_size_mb" > ./osx_ramdisk.conf
