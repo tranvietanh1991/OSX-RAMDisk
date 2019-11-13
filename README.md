@@ -17,12 +17,14 @@ Supported apps (you can add yours):
 * Safari
 * iTunes
 * [Android studio](http://developer.android.com/sdk/index.html)
-* [WebShtorm](https://www.jetbrains.com/webstorm/)
 * [Clion](https://www.jetbrains.com/clion/)
 * [AppCode](https://www.jetbrains.com/objc/)
 * [Xcode](https://developer.apple.com/xcode/downloads/)
 * [PHP Storm](https://www.jetbrains.com/phpstorm/)
-* [your_app_goes_here]
+* [PyCharm](https://www.jetbrains.com/pycharm/)
+* [WebStorm](https://www.jetbrains.com/webstorm/)
+* [DataGrip](https://www.jetbrains.com/datagrip/)
+* [more_app_goes_here]
 
 The IntelliJ Idea (or JetBrains IDEs) are really fast after this. Be aware that for the large code base you will
 need to have larger RAM Disk. I don't have exact numbers, sorry, it can vary because of many factors. Mine 

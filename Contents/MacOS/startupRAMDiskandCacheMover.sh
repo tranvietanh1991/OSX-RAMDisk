@@ -177,7 +177,7 @@ move_chrome_cache()
             /bin/mv ~/Library/Caches/Google/* /tmp/Google
             /bin/mkdir -pv "${USERRAMDISK}"/Google
             /bin/mv /tmp/Google/* "${USERRAMDISK}"/Google
-            /bin/ln -v -s -f "${USERRAMDISK}"/Google ~/Library/Caches/Google/
+            /bin/ln -v -s -f "${USERRAMDISK}"/Google ~/Library/Caches/Google
             /bin/rm -rf /tmp/Google
             # and let's create a flag for next run that we moved the cache.
             echo "";
@@ -230,6 +230,24 @@ move_itunes_cache()
             /bin/mkdir -pv "${USERRAMDISK}"/Apple/iTunes
             /bin/ln -v -s "${USERRAMDISK}"/Apple/iTunes ~/Library/Caches/com.apple.iTunes
             echo "Moved iTunes cache."
+        fi
+    fi
+}
+
+#
+# Xcode - ios
+#
+move_xcode_cache()
+{
+    if [ -d "/Applications/Xcode.app" ]; then
+        if user_response "${MSG_PROMPT_FOUND}" 'Xcode'"${MSG_MOVE_CACHE}" ; then
+            echo "moving XCode cache..";
+            echo "deleting ~/Library/Developer/Xcode/DerivedData"
+
+            /bin/rm -rvf ~/Library/Developer/Xcode/DerivedData
+            /bin/mkdir -pv "${USERRAMDISK}"/Apple/Xcode
+            /bin/ln -v -s "${USERRAMDISK}"/Apple/Xcode /Users/"${USER}"/Library/Developer/Xcode/DerivedData
+            echo "Moved Xcode cache."
         fi
     fi
 }
@@ -298,6 +316,32 @@ move_android_studio_cache()
     fi
 }
 
+move_jetbrain_app_cache()
+{
+  APP_NAME=$1
+
+  echo "moving $APP_NAME cache";
+  close_app "$APP_NAME"
+  SPATH="$(cat /Applications/$APP_NAME.app/Contents/bin/idea.properties | grep -m 1 "idea.system.path=" | cut -d'=' -f2)"
+  LPATH="$(cat /Applications/$APP_NAME.app/Contents/bin/idea.properties | grep -m 1 "idea.log.path=" | cut -d'=' -f2)"
+  if [ "$SPATH" != "${USERRAMDISK}/$APP_NAME" ] || [ "$LPATH" != "${USERRAMDISK}/$APP_NAME/logs" ] ; then
+    # make a backup of config - will need it when uninstalling
+    cp -f /Applications/$APP_NAME.app/Contents/bin/idea.properties /Applications/$APP_NAME.app/Contents/bin/idea.properties.back
+    # Idea will create those dirs during startup, we just need to copy cache over before app is started
+    if [ "$SPATH" != "${USERRAMDISK}/$APP_NAME" ]; then
+      CACHE_FOLDER="$HOME/Library/Caches/$(ls -r ~/Library/Caches/ | grep -m 1 $APP_NAME)"
+      echo "moving cache from $CACHE_FOLDER ...";
+      cp -rf $CACHE_FOLDER/* ${USERRAMDISK}/$APP_NAME/
+      echo "idea.system.path=${USERRAMDISK}/$APP_NAME" >> /Applications/$APP_NAME.app/Contents/bin/idea.properties
+    fi
+    if [ "$SPATH" != "${USERRAMDISK}/$APP_NAME/logs" ]; then
+      echo "idea.log.path=${USERRAMDISK}/$APP_NAME/logs" >> /Applications/$APP_NAME.app/Contents/bin/idea.properties
+    fi
+  fi
+  echo "Moved $APP_NAME cache."
+
+}
+
 #
 # Clion
 #
@@ -305,14 +349,7 @@ move_clion_cache()
 {
     if [ -d "/Applications/Clion.app" ]; then
         if user_response "${MSG_PROMPT_FOUND}" 'Clion'"${MSG_MOVE_CACHE}" ; then
-            echo "moving Clion cache";
-            close_app "Clion"
-            # make a backup of config - will need it when uninstalling
-            cp -f /Applications/Clion.app/Contents/bin/idea.properties /Applications/Clion.app/Contents/bin/idea.properties.back
-            # Idea will create those dirs
-            echo "idea.system.path=${USERRAMDISK}/Clion" >> /Applications/Clion.app/Contents/bin/idea.properties
-            echo "idea.log.path=${USERRAMDISK}/Clion/logs" >> /Applications/Clion.app/Contents/bin/idea.properties
-            echo "Moved Clion cache."
+            move_jetbrain_app_cache  "Clion";
         fi
     fi
 }
@@ -324,36 +361,12 @@ move_appcode_cache()
 {
     if [ -d "/Applications/AppCode.app" ]; then
         if user_response "${MSG_PROMPT_FOUND}" 'AppCode'"${MSG_MOVE_CACHE}" ; then
-            echo "moving AppCode cache";
-            close_app "AppCode"
-            # make a backup of config - will need it when uninstalling
-            cp -f /Applications/AppCode.app/Contents/bin/idea.properties /Applications/AppCode.app/Contents/bin/idea.properties.back
-            # Need to create those dirs
-            echo "idea.system.path=${USERRAMDISK}/AppCode" >> /Applications/AppCode.app/Contents/bin/idea.properties
-            echo "idea.log.path=${USERRAMDISK}/AppCode/logs" >> /Applications/AppCode.app/Contents/bin/idea.properties
-            mkdir -p "${USERRAMDISK}"/AppCode/logs
-            echo "Moved AppCode cache."
+            move_jetbrain_app_cache "AppCode";
         fi
     fi
 }
 
-#
-# Xcode - ios
-#
-move_xcode_cache()
-{
-    if [ -d "/Applications/Xcode.app" ]; then
-        if user_response "${MSG_PROMPT_FOUND}" 'Xcode'"${MSG_MOVE_CACHE}" ; then
-            echo "moving XCode cache..";
-            echo "deleting ~/Library/Developer/Xcode/DerivedData"
 
-            /bin/rm -rvf ~/Library/Developer/Xcode/DerivedData
-            /bin/mkdir -pv "${USERRAMDISK}"/Apple/Xcode
-            /bin/ln -v -s "${USERRAMDISK}"/Apple/Xcode /Users/"${USER}"/Library/Developer/Xcode/DerivedData
-            echo "Moved Xcode cache."
-        fi
-    fi
-}
 
 #
 # PhpStorm
@@ -362,17 +375,12 @@ move_phpstorm_cache()
 {
     if [ -d "/Applications/PhpStorm.app" ]; then
         if user_response "${MSG_PROMPT_FOUND}" 'PhpStorm'"${MSG_MOVE_CACHE}" ; then
-            echo "moving PHPStorm cache";
-            close_app "PhpStorm"
-            # make a backup of config - will need it when uninstalling
-            cp -f /Applications/PhpStorm.app/Contents/bin/idea.properties /Applications/PhpStorm.app/Contents/bin/idea.properties.back
-            # Idea will create those dirs
-            echo "idea.system.path=${USERRAMDISK}/PhpStorm" >> /Applications/PhpStorm.app/Contents/bin/idea.properties
-            echo "idea.log.path=${USERRAMDISK}/PhpStorm/logs" >> /Applications/PhpStorm.app/Contents/bin/idea.properties
-            echo "Moved PhpStorm cache."
+            move_jetbrain_app_cache "PhpStorm";
         fi
     fi
 }
+
+
 
 #
 # WebStorm
@@ -381,14 +389,7 @@ move_webstorm_cache()
 {
     if [ -d "/Applications/WebStorm.app" ]; then
         if user_response "${MSG_PROMPT_FOUND}" 'WebStorm'"${MSG_MOVE_CACHE}" ; then
-            echo "moving WebStorm cache";
-            close_app "WebStorm"
-            # make a backup of config - will need it when uninstalling
-            cp -f /Applications/WebStorm.app/Contents/bin/idea.properties /Applications/WebStorm.app/Contents/bin/idea.properties.back
-            # Idea will create those dirs
-            echo "idea.system.path=${USERRAMDISK}/WebStorm" >> /Applications/WebStorm.app/Contents/bin/idea.properties
-            echo "idea.log.path=${USERRAMDISK}/WebStorm/logs" >> /Applications/WebStorm.app/Contents/bin/idea.properties
-            echo "Moved WebStorm cache."
+            move_jetbrain_app_cache "WebStorm";
         fi
     fi
 }
@@ -400,14 +401,7 @@ move_pycharm_cache()
 {
     if [ -d "/Applications/PyCharm.app" ]; then
         if user_response "${MSG_PROMPT_FOUND}" 'PyCharm'"${MSG_MOVE_CACHE}" ; then
-            echo "moving PyCharm cache";
-            close_app "PyCharm"
-            # make a backup of config - will need it when uninstalling
-            cp -f /Applications/PyCharm.app/Contents/bin/idea.properties /Applications/PyCharm.app/Contents/bin/idea.properties.back
-            # Idea will create those dirs
-            echo "idea.system.path=${USERRAMDISK}/PyCharm" >> /Applications/PyCharm.app/Contents/bin/idea.properties
-            echo "idea.log.path=${USERRAMDISK}/PyCharm/logs" >> /Applications/PyCharm.app/Contents/bin/idea.properties
-            echo "Moved PyCharm cache."
+            move_jetbrain_app_cache "PyCharm";
         fi
     fi
 }
@@ -419,14 +413,7 @@ move_datagrip_cache()
 {
     if [ -d "/Applications/DataGrip.app" ]; then
         if user_response "${MSG_PROMPT_FOUND}" 'DataGrip'"${MSG_MOVE_CACHE}" ; then
-            echo "moving DataGrip cache";
-            close_app "DataGrip"
-            # make a backup of config - will need it when uninstalling
-            cp -f /Applications/DataGrip.app/Contents/bin/idea.properties /Applications/DataGrip.app/Contents/bin/idea.properties.back
-            # Idea will create those dirs
-            echo "idea.system.path=${USERRAMDISK}/DataGrip" >> /Applications/DataGrip.app/Contents/bin/idea.properties
-            echo "idea.log.path=${USERRAMDISK}/DataGrip/logs" >> /Applications/DataGrip.app/Contents/bin/idea.properties
-            echo "Moved DataGrip cache."
+            move_jetbrain_app_cache "DataGrip";
         fi
     fi
 }
@@ -443,6 +430,7 @@ main() {
     move_chrome_cache
     move_safari_cache
     move_itunes_cache
+    move_xcode_cache
 
     move_idea_cache
     move_ideace_cache
@@ -451,9 +439,9 @@ main() {
     echo "echo use \"${mount_point}/compileroutput\" for intelliJ project output directory."
     
     move_android_studio_cache
+
     move_clion_cache
     move_appcode_cache
-    move_xcode_cache
     move_phpstorm_cache
     move_webstorm_cache
     move_pycharm_cache
@@ -462,5 +450,5 @@ main() {
     echo "All good - I have done my job. Your apps should fly."
 }
 
-main "$@"
+#main "$@"
 # -----------------------------------------------------------------------------------
