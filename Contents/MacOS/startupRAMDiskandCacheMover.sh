@@ -46,8 +46,10 @@ else
 fi
 
 mount_point=/Users/${USER}/ramdisk
+tmp_for_mount=/tmp/_ramdisk
 ramfs_size_sectors=$((ramfs_size_mb*1024*1024/512))
 ramdisk_device=$(hdid -nomount ram://${ramfs_size_sectors} | xargs)
+TMPMOUNT="${tmp_for_mount}"
 USERRAMDISK="${mount_point}"
 
 MSG_MOVE_CACHE=". Do you want me to move its cache? Note: It will close the app."
@@ -87,13 +89,24 @@ close_app()
 #
 mk_ram_disk()
 {
-    # unmount if exists and mounts if doesn't
-    umount -f "${mount_point}"
+    # move to tmp and unmount if exists
+    if [ -d "${mount_point}" ]; then
+      echo "mount point exist move content to ${tmp_for_mount}"
+      mkdir -p "${tmp_for_mount}"
+      mv -f "${mount_point}"/* "${tmp_for_mount}"/
+      umount -f "${mount_point}"
+    fi
+    # create ram disk
     newfs_hfs -v 'ramdisk' "${ramdisk_device}"
     mkdir -p "${mount_point}"
     mount -o noatime -t hfs "${ramdisk_device}" "${mount_point}"
-
     echo "created RAM disk."
+    # move back tmp
+    if [ -d "${tmp_for_mount}" ]; then
+      echo "move back content from ${tmp_for_mount} to RAM disk"
+      mv "${tmp_for_mount}"/* "${mount_point}"/
+      rm -f $tmp_for_mount
+    fi
     # Hide RAM disk - we don't really need it to be annoiyng in finder.
     # comment out should you need it.
     # hide_ramdisk
@@ -173,12 +186,14 @@ move_chrome_cache()
     if [ -d "/Users/${USER}/Library/Caches/Google/Chrome" ]; then
         if user_response "${MSG_PROMPT_FOUND}" 'Chrome'"${MSG_MOVE_CACHE}" ; then
             close_app "Google Chrome"
-            /bin/mkdir -p /tmp/Google
-            /bin/mv ~/Library/Caches/Google/* /tmp/Google
-            /bin/mkdir -pv "${USERRAMDISK}"/Google
-            /bin/mv /tmp/Google/* "${USERRAMDISK}"/Google
+            if [[ ! -d "${USERRAMDISK}/Google/" ]]; then
+              /bin/mkdir -p /tmp/Google
+              /bin/mv ~/Library/Caches/Google/* /tmp/Google
+              /bin/mkdir -pv "${USERRAMDISK}"/Google
+              /bin/mv /tmp/Google/* "${USERRAMDISK}"/Google
+              /bin/rm -rf /tmp/Google
+            fi
             /bin/ln -v -s -f "${USERRAMDISK}"/Google ~/Library/Caches/Google
-            /bin/rm -rf /tmp/Google
             # and let's create a flag for next run that we moved the cache.
             echo "";
         fi
@@ -319,9 +334,15 @@ move_android_studio_cache()
 move_jetbrain_app_cache()
 {
   APP_NAME=$1
-
-  echo "moving $APP_NAME cache";
+  echo "setup $APP_NAME cache in ${USERRAMDISK}";
   close_app "$APP_NAME"
+  # if cache is not moved from previous user ramdisk then copy it from original cache folder
+  if [[ ! -d "${USERRAMDISK}/$APP_NAME/" ]]; then
+    CACHE_FOLDER="$HOME/Library/Caches/$(ls -r ~/Library/Caches/ | grep -m 1 $APP_NAME)"
+    echo "moving cache from $CACHE_FOLDER ...";
+    cp -rf $CACHE_FOLDER ${USERRAMDISK}/$APP_NAME/
+  fi
+  # check config for folder path has been changed or not
   SPATH="$(cat /Applications/$APP_NAME.app/Contents/bin/idea.properties | grep -m 1 "idea.system.path=" | cut -d'=' -f2)"
   LPATH="$(cat /Applications/$APP_NAME.app/Contents/bin/idea.properties | grep -m 1 "idea.log.path=" | cut -d'=' -f2)"
   if [ "$SPATH" != "${USERRAMDISK}/$APP_NAME" ] || [ "$LPATH" != "${USERRAMDISK}/$APP_NAME/logs" ] ; then
@@ -329,9 +350,6 @@ move_jetbrain_app_cache()
     cp -f /Applications/$APP_NAME.app/Contents/bin/idea.properties /Applications/$APP_NAME.app/Contents/bin/idea.properties.back
     # Idea will create those dirs during startup, we just need to copy cache over before app is started
     if [ "$SPATH" != "${USERRAMDISK}/$APP_NAME" ]; then
-      CACHE_FOLDER="$HOME/Library/Caches/$(ls -r ~/Library/Caches/ | grep -m 1 $APP_NAME)"
-      echo "moving cache from $CACHE_FOLDER ...";
-      cp -rf $CACHE_FOLDER/* ${USERRAMDISK}/$APP_NAME/
       echo "idea.system.path=${USERRAMDISK}/$APP_NAME" >> /Applications/$APP_NAME.app/Contents/bin/idea.properties
     fi
     if [ "$SPATH" != "${USERRAMDISK}/$APP_NAME/logs" ]; then
@@ -450,5 +468,5 @@ main() {
     echo "All good - I have done my job. Your apps should fly."
 }
 
-#main "$@"
+main "$@"
 # -----------------------------------------------------------------------------------
